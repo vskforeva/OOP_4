@@ -2,8 +2,20 @@
 
 namespace StudentApp
 {
+    // Интерфейс IPerson
+    public interface IPerson
+    {
+        string Name { get; }
+        string GetInfo();
+    }
+    // Интерфейс ISpecialist, производный от IPerson
+    public interface ISpecialist : IPerson
+    {
+        string Specialization { get; }
+        string GetSpecializationInfo();
+    }
     // Абстрактный класс Person
-    public abstract class Person
+    public abstract class Person : IPerson
     {
         // Абстрактное поле (свойство) для имени
         public abstract string Name { get; }
@@ -12,23 +24,38 @@ namespace StudentApp
         public abstract string GetInfo();
     }
 
-    // Класс Student, производный от Person
-    public class Student : Person
+    // Класс Subject для любимого предмета студента
+    public class Subject
     {
-        // Закрытое поле для имени студента
+        public string SubjectName { get; set; }
+
+        public Subject(string subjectName)
+        {
+            SubjectName = subjectName;
+        }
+
+        public override string ToString()
+        {
+            return SubjectName;
+        }
+    }
+
+    // Класс Student, производный от Person
+    public class Student : Person, ICloneable, IComparable<Student>
+    {
         private string _name;
-
-        // Публичное свойство для имени (переопределение абстрактного свойства)
         public override string Name => _name;
-
-        // Публичное свойство для возраста студента
         public int Age { get; set; }
+
+        // Поле для любимого предмета
+        public Subject FavoriteSubject { get; set; }
 
         // Конструктор, принимающий только имя
         public Student(string name)
         {
             _name = name;
             Age = 0; // Возраст по умолчанию
+            FavoriteSubject = new Subject("Неизвестно"); // Предмет по умолчанию
         }
 
         // Конструктор, принимающий имя и возраст
@@ -36,12 +63,13 @@ namespace StudentApp
         {
             _name = name;
             Age = age;
+            FavoriteSubject = new Subject("Неизвестно"); // Предмет по умолчанию
         }
 
         // Переопределение метода GetInfo()
         public override string GetInfo()
         {
-            return $"Имя: {Name}, Возраст: {Age}";
+            return $"Имя: {Name}, Возраст: {Age}, Любимый предмет: {FavoriteSubject}";
         }
 
         // Метод для увеличения возраста студента на единицу
@@ -55,7 +83,21 @@ namespace StudentApp
         {
             return GetInfo();
         }
+
+        // Реализация метода Clone() из ICloneable
+        public object Clone()
+        {
+            return new Student(_name, Age) { FavoriteSubject = new Subject(FavoriteSubject.SubjectName) };
+        }
+
+        // Реализация метода CompareTo() из IComparable
+        public int CompareTo(Student other)
+        {
+            if (other == null) return 1;
+            return Age.CompareTo(other.Age);
+        }
     }
+
 
     // Класс ITStudent, производный от Student
     public class ITStudent : Student
@@ -67,6 +109,7 @@ namespace StudentApp
             : base(name, age)
         {
             Specialization = specialization;
+            FavoriteSubject = new Subject("Программирование"); // Установка любимого предмета по умолчанию
         }
 
         // Переопределение метода GetInfo() с добавлением специализации
@@ -74,11 +117,16 @@ namespace StudentApp
         {
             return base.GetInfo() + $", Специализация: {Specialization}";
         }
+        // Реализация метода GetSpecializationInfo() из ISpecialist
+        public string GetSpecializationInfo()
+        {
+            return $"Специализация: {Specialization}";
+        }
 
         // Скрытие метода ToString() класса Student (не переопределение)
         new public string ToString()
         {
-            return $"IT Студент: {Name}, Возраст: {Age}, Специализация: {Specialization}";
+            return $"IT Студент: {Name}, Возраст: {Age}, Специализация: {Specialization}, Любимый предмет: {FavoriteSubject}";
         }
     }
 
@@ -88,6 +136,7 @@ namespace StudentApp
         {
             // Создание объекта класса Student
             Student student1 = new Student("Иван");
+            student1.FavoriteSubject = new Subject("Математика");
             Console.WriteLine(student1); // Использует переопределенный ToString()
 
             student1.BecomeOlder();
@@ -95,17 +144,25 @@ namespace StudentApp
 
             // Создание объекта класса ITStudent
             ITStudent itStudent1 = new ITStudent("Анна", 20, "Программирование");
+            itStudent1.FavoriteSubject = new Subject("Информатика");
             Console.WriteLine(itStudent1); // Использует скрытый ToString()
 
             itStudent1.BecomeOlder();
             Console.WriteLine(itStudent1.GetInfo()); // Имя: Анна, Возраст: 21, Специализация: Программирование
 
-            // Демонстрация различия между переопределением и скрытием методов
-            Console.WriteLine(itStudent1.GetInfo());  // Переопределенный метод из Student
+            // Демонстрация клонирования студента
+            Student clonedStudent = (Student)student1.Clone();
+            Console.WriteLine($"Клонированный студент: {clonedStudent}");
+
+            // Сравнение студентов по возрасту
+            Console.WriteLine($"Сравнение студентов: {student1.CompareTo(itStudent1)}");
+
+            Console.WriteLine(itStudent1.GetSpecializationInfo());  // Специализация: Программирование
+
             Console.WriteLine(((Student)itStudent1).GetInfo());  // Переопределенный метод из Student
 
-            // Скрытие метода ToString()
             Console.WriteLine(itStudent1.ToString());  // Скрытый метод из ITStudent
+
             Console.WriteLine(((Student)itStudent1).ToString());  // Переопределенный метод из Student
         }
     }
